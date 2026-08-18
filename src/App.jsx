@@ -13,18 +13,12 @@ import AdminAnalyticsView from './views/AdminAnalyticsView';
 import LoginView from './views/LoginView';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState('landing');
+  // START ON LOGIN PAGE BY DEFAULT
+  const [currentView, setCurrentView] = useState('login');
   const [globalSearch, setGlobalSearch] = useState('');
 
-  // User Auth Session State
-  const [user, setUser] = useState({
-    name: 'Aditya Singh',
-    email: 'aditya.singh.dev@gmail.com',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-    provider: 'Google OAuth 2.0',
-    role: 'Senior Legal Officer',
-    verified: true
-  });
+  // INITIALIZE USER SESSION AS NULL (REQUIRES SIGN-IN FIRST)
+  const [user, setUser] = useState(null);
 
   // Dynamic Wallet State
   const [wallet, setWallet] = useState({
@@ -49,9 +43,8 @@ export default function App() {
 
   // Dynamic Notifications State
   const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Google Authentication Active', desc: 'Signed in as aditya.singh.dev@gmail.com', time: 'Just now', read: false },
-    { id: 2, title: 'Document Verified', desc: 'Deed #4829 confirmation received', time: '5m ago', read: false },
-    { id: 3, title: 'Multi-Sig Approval', desc: 'MSA Agreement signed by counsel', time: '1h ago', read: false }
+    { id: 1, title: 'Authentication Required', desc: 'Please sign in to access encrypted document repository', time: 'Just now', read: false },
+    { id: 2, title: 'Network Online', desc: 'Polygon POS Mainnet node operational', time: '5m ago', read: false }
   ]);
 
   // Master Dynamic Documents Collection
@@ -155,7 +148,6 @@ export default function App() {
 
   // Master Dynamic System Audit Logs
   const [auditLogs, setAuditLogs] = useState([
-    { id: 'LOG-9403', event: 'Google OAuth 2.0 Authentication Session Active', user: 'aditya.singh.dev@gmail.com', time: 'Just now', severity: 'Info' },
     { id: 'LOG-9402', event: 'Smart Contract Ownership Re-anchored', user: 'Admin (0x71C7...39A2)', time: '10 mins ago', severity: 'Info' },
     { id: 'LOG-9401', event: 'IPFS Cluster Garbage Collection', user: 'System Worker', time: '42 mins ago', severity: 'Low' },
     { id: 'LOG-9400', event: 'Vault Document Uploaded (Deed #4829)', user: 'Counsel User', time: '1 hour ago', severity: 'Info' },
@@ -174,7 +166,7 @@ export default function App() {
     setUser(authUser);
     setAuditLogs(prev => [
       {
-        id: `LOG-${9404 + prev.length}`,
+        id: `LOG-${9403 + prev.length}`,
         event: `User Authenticated via ${authUser.provider} (${authUser.email})`,
         user: authUser.email,
         time: 'Just now',
@@ -186,11 +178,17 @@ export default function App() {
       { id: Date.now(), title: 'Authentication Successful', desc: `Signed in as ${authUser.email}`, time: 'Just now', read: false },
       ...prev
     ]);
+    // REDIRECT TO DASHBOARD ON LOGIN SUCCESS
     setCurrentView('dashboard');
   };
 
   const handleSignOut = () => {
     setUser(null);
+    setNotifications(prev => [
+      { id: Date.now(), title: 'Signed Out', desc: 'Session ended successfully', time: 'Just now', read: false },
+      ...prev
+    ]);
+    // REDIRECT BACK TO LOGIN ON SIGN OUT
     setCurrentView('login');
   };
 
@@ -213,7 +211,7 @@ export default function App() {
 
     setAuditLogs(prev => [
       {
-        id: `LOG-${9404 + prev.length}`,
+        id: `LOG-${9403 + prev.length}`,
         event: `New Vault Document Registered (${newDoc.title})`,
         user: user ? user.email : wallet.address,
         time: 'Just now',
@@ -268,6 +266,14 @@ export default function App() {
 
   const renderView = () => {
     switch (currentView) {
+      case 'login':
+        return (
+          <LoginView
+            onLoginSuccess={handleLoginSuccess}
+            onNavigate={(view) => setCurrentView(view)}
+            onConnectWalletClick={() => setIsWalletModalOpen(true)}
+          />
+        );
       case 'landing':
         return (
           <LandingView
@@ -275,7 +281,7 @@ export default function App() {
             wallet={wallet}
             user={user}
             onConnectWalletClick={() => setIsWalletModalOpen(true)}
-            onExploreClick={() => setCurrentView('dashboard')}
+            onExploreClick={() => setCurrentView(user ? 'dashboard' : 'login')}
           />
         );
       case 'dashboard':
@@ -348,7 +354,7 @@ export default function App() {
             onClearLogs={() => setAuditLogs([])}
           />
         );
-      case 'login':
+      default:
         return (
           <LoginView
             onLoginSuccess={handleLoginSuccess}
@@ -356,8 +362,6 @@ export default function App() {
             onConnectWalletClick={() => setIsWalletModalOpen(true)}
           />
         );
-      default:
-        return <LandingView documentsCount={documents.length} wallet={wallet} onConnectWalletClick={() => setIsWalletModalOpen(true)} onExploreClick={() => setCurrentView('dashboard')} />;
     }
   };
 
@@ -395,7 +399,20 @@ export default function App() {
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
         wallet={wallet}
-        onSelectWallet={(newAddr, newNet) => setWallet({ ...wallet, address: newAddr, network: newNet || wallet.network, isConnected: true })}
+        onSelectWallet={(newAddr, newNet) => {
+          setWallet({ ...wallet, address: newAddr, network: newNet || wallet.network, isConnected: true });
+          if (!user) {
+            // Also log in via Web3 wallet if unauthenticated
+            handleLoginSuccess({
+              name: `Wallet User (${newAddr.substring(0,6)}...)`,
+              email: `${newAddr.substring(0,8)}@web3.eth`,
+              avatar: null,
+              provider: 'Web3 Wallet',
+              role: 'Cryptographic Signer',
+              verified: true
+            });
+          }
+        }}
       />
     </div>
   );
