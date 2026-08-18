@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { Wallet, User, Search, Bell, Check, Trash2 } from 'lucide-react';
+import { Wallet, User, Search, Bell, Check, Trash2, LogIn } from 'lucide-react';
 
 export default function Header({
   currentView,
   wallet,
+  user,
   globalSearch,
   setGlobalSearch,
   notifications,
   setNotifications,
-  onConnectWalletClick
+  onConnectWalletClick,
+  onNavigate
 }) {
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -21,6 +23,7 @@ export default function Header({
       case 'verify': return 'Verify Cryptographic Proof';
       case 'document-detail': return 'Document Provenance Certificate';
       case 'admin-analytics': return 'Admin Analytics & Audit Log';
+      case 'login': return 'User Authentication & OAuth';
       default: return 'Legal eVault';
     }
   };
@@ -44,7 +47,7 @@ export default function Header({
         </h1>
       </div>
 
-      {/* Action Buttons, Dynamic Notifications & Wallet */}
+      {/* Action Buttons, Notifications, Wallet & Google User Profile */}
       <div className="flex items-center gap-4">
         {/* Dynamic Global Search Input */}
         <div className="relative hidden md:block w-64">
@@ -105,16 +108,35 @@ export default function Header({
         {/* Dynamic Wallet Connect Button */}
         <button
           onClick={onConnectWalletClick}
-          className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white px-5 py-2.5 rounded-full font-sans text-xs font-bold tracking-wide shadow-sm hover:from-amber-600 hover:to-amber-700 transition-all active:scale-95"
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white px-4 py-2 rounded-full font-sans text-xs font-bold tracking-wide shadow-sm hover:from-amber-600 hover:to-amber-700 transition-all active:scale-95"
         >
           <Wallet className="w-4 h-4" />
           <span>{wallet.address ? `${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)}` : 'Connect Wallet'}</span>
         </button>
 
-        {/* Profile Avatar */}
-        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-800 text-white flex items-center justify-center font-bold text-sm shadow-sm ring-2 ring-indigo-100">
-          <User className="w-4 h-4" />
-        </div>
+        {/* Profile Avatar / Login Button */}
+        {user ? (
+          <button
+            onClick={() => onNavigate('login')}
+            className="flex items-center gap-2 pl-2 pr-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition-colors"
+          >
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover ring-2 ring-indigo-500" />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                {user.name ? user.name[0] : 'U'}
+              </div>
+            )}
+            <span className="text-xs font-bold text-slate-800">{user.name.split(' ')[0]}</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => onNavigate('login')}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold flex items-center gap-1.5 transition-colors shadow-sm"
+          >
+            <LogIn className="w-4 h-4" /> Sign In
+          </button>
+        )}
       </div>
     </header>
   );

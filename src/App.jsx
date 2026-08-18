@@ -10,10 +10,21 @@ import UploadDocumentView from './views/UploadDocumentView';
 import VerifyDocumentView from './views/VerifyDocumentView';
 import DocumentDetailView from './views/DocumentDetailView';
 import AdminAnalyticsView from './views/AdminAnalyticsView';
+import LoginView from './views/LoginView';
 
 export default function App() {
   const [currentView, setCurrentView] = useState('landing');
   const [globalSearch, setGlobalSearch] = useState('');
+
+  // User Auth Session State
+  const [user, setUser] = useState({
+    name: 'Aditya Singh',
+    email: 'aditya.singh.dev@gmail.com',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
+    provider: 'Google OAuth 2.0',
+    role: 'Senior Legal Officer',
+    verified: true
+  });
 
   // Dynamic Wallet State
   const [wallet, setWallet] = useState({
@@ -38,9 +49,9 @@ export default function App() {
 
   // Dynamic Notifications State
   const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Document Verified', desc: 'Deed #4829 confirmation received', time: '5m ago', read: false },
-    { id: 2, title: 'Multi-Sig Approval', desc: 'MSA Agreement signed by counsel', time: '1h ago', read: false },
-    { id: 3, title: 'IPFS Sync Complete', desc: 'Pinata node cluster synced', time: '3h ago', read: true }
+    { id: 1, title: 'Google Authentication Active', desc: 'Signed in as aditya.singh.dev@gmail.com', time: 'Just now', read: false },
+    { id: 2, title: 'Document Verified', desc: 'Deed #4829 confirmation received', time: '5m ago', read: false },
+    { id: 3, title: 'Multi-Sig Approval', desc: 'MSA Agreement signed by counsel', time: '1h ago', read: false }
   ]);
 
   // Master Dynamic Documents Collection
@@ -144,10 +155,10 @@ export default function App() {
 
   // Master Dynamic System Audit Logs
   const [auditLogs, setAuditLogs] = useState([
+    { id: 'LOG-9403', event: 'Google OAuth 2.0 Authentication Session Active', user: 'aditya.singh.dev@gmail.com', time: 'Just now', severity: 'Info' },
     { id: 'LOG-9402', event: 'Smart Contract Ownership Re-anchored', user: 'Admin (0x71C7...39A2)', time: '10 mins ago', severity: 'Info' },
     { id: 'LOG-9401', event: 'IPFS Cluster Garbage Collection', user: 'System Worker', time: '42 mins ago', severity: 'Low' },
     { id: 'LOG-9400', event: 'Vault Document Uploaded (Deed #4829)', user: 'Counsel User', time: '1 hour ago', severity: 'Info' },
-    { id: 'LOG-9399', event: 'Multi-Sig Consensus Validation Passed', user: 'Validator Node 02', time: '3 hours ago', severity: 'Info' },
   ]);
 
   // Master Dynamic Infrastructure Nodes
@@ -158,9 +169,32 @@ export default function App() {
     { id: 'n4', name: 'Multi-Sig Key Manager Service', region: 'us-west (Oregon)', status: 'Healthy', latency: 38, uptime: '99.98%' },
   ]);
 
-  // Dynamic Actions (CRUD Operations)
+  // Dynamic Auth Callbacks
+  const handleLoginSuccess = (authUser) => {
+    setUser(authUser);
+    setAuditLogs(prev => [
+      {
+        id: `LOG-${9404 + prev.length}`,
+        event: `User Authenticated via ${authUser.provider} (${authUser.email})`,
+        user: authUser.email,
+        time: 'Just now',
+        severity: 'Info'
+      },
+      ...prev
+    ]);
+    setNotifications(prev => [
+      { id: Date.now(), title: 'Authentication Successful', desc: `Signed in as ${authUser.email}`, time: 'Just now', read: false },
+      ...prev
+    ]);
+    setCurrentView('dashboard');
+  };
 
-  // 1. Add Document
+  const handleSignOut = () => {
+    setUser(null);
+    setCurrentView('login');
+  };
+
+  // Add Document Callback
   const handleAddDocument = (newDoc) => {
     const docId = `DOC-${1000 + documents.length + 1}`;
     const fullDoc = {
@@ -172,7 +206,6 @@ export default function App() {
     setDocuments(prev => [fullDoc, ...prev]);
     setSelectedDocId(docId);
 
-    // Dynamic Notification & Log
     setNotifications(prev => [
       { id: Date.now(), title: 'New Document Vaulted', desc: `${newDoc.title} registered on-chain`, time: 'Just now', read: false },
       ...prev
@@ -180,9 +213,9 @@ export default function App() {
 
     setAuditLogs(prev => [
       {
-        id: `LOG-${9403 + prev.length}`,
+        id: `LOG-${9404 + prev.length}`,
         event: `New Vault Document Registered (${newDoc.title})`,
-        user: `Signer (${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)})`,
+        user: user ? user.email : wallet.address,
         time: 'Just now',
         severity: 'Info'
       },
@@ -190,22 +223,12 @@ export default function App() {
     ]);
   };
 
-  // 2. Update Document Metadata or Status
+  // Update Document Callback
   const handleUpdateDocument = (id, updatedFields) => {
     setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, ...updatedFields } : doc));
-    setAuditLogs(prev => [
-      {
-        id: `LOG-${9403 + prev.length}`,
-        event: `Document Updated (${id})`,
-        user: `Admin (${wallet.address.substring(0, 6)}...)`,
-        time: 'Just now',
-        severity: 'Info'
-      },
-      ...prev
-    ]);
   };
 
-  // 3. Delete Document
+  // Delete Document Callback
   const handleDeleteDocument = (id) => {
     const targetDoc = documents.find(d => d.id === id);
     setDocuments(prev => prev.filter(doc => doc.id !== id));
@@ -213,19 +236,9 @@ export default function App() {
       const remaining = documents.filter(doc => doc.id !== id);
       setSelectedDocId(remaining[0].id);
     }
-    setAuditLogs(prev => [
-      {
-        id: `LOG-${9403 + prev.length}`,
-        event: `Document Removed from Vault (${targetDoc?.title || id})`,
-        user: `Admin (${wallet.address.substring(0, 6)}...)`,
-        time: 'Just now',
-        severity: 'Warning'
-      },
-      ...prev
-    ]);
   };
 
-  // 4. Add Timeline Event to Document
+  // Timeline Event Callback
   const handleAddTimelineEvent = (docId, eventTitle, actorName) => {
     const nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' UTC';
     setDocuments(prev => prev.map(doc => {
@@ -233,7 +246,7 @@ export default function App() {
         const newEvt = {
           id: Date.now(),
           title: eventTitle,
-          actor: actorName || wallet.address,
+          actor: actorName || (user ? user.name : wallet.address),
           time: nowStr,
           color: 'bg-indigo-600'
         };
@@ -246,28 +259,9 @@ export default function App() {
     }));
   };
 
-  // 5. Category Management
-  const handleAddCategory = (newCat) => {
-    if (newCat && !categories.includes(newCat)) {
-      setCategories([...categories, newCat]);
-    }
-  };
-
-  // 6. Select Document Helper
   const handleSelectDocument = (id) => {
     setSelectedDocId(id);
     setCurrentView('document-detail');
-  };
-
-  // 7. Toggle Node Status / Ping Nodes
-  const handleToggleNodeStatus = (nodeId) => {
-    setNodes(prev => prev.map(n => {
-      if (n.id === nodeId) {
-        const nextStatus = n.status === 'Healthy' ? 'Degraded' : n.status === 'Degraded' ? 'Offline' : 'Healthy';
-        return { ...n, status: nextStatus, latency: nextStatus === 'Healthy' ? Math.floor(Math.random()*40 + 30) : nextStatus === 'Degraded' ? Math.floor(Math.random()*200 + 200) : 0 };
-      }
-      return n;
-    }));
   };
 
   const selectedDocument = documents.find(d => d.id === selectedDocId) || documents[0];
@@ -279,6 +273,7 @@ export default function App() {
           <LandingView
             documentsCount={documents.length}
             wallet={wallet}
+            user={user}
             onConnectWalletClick={() => setIsWalletModalOpen(true)}
             onExploreClick={() => setCurrentView('dashboard')}
           />
@@ -288,6 +283,7 @@ export default function App() {
           <DashboardView
             documents={documents}
             wallet={wallet}
+            user={user}
             nodes={nodes}
             onNavigate={(view) => setCurrentView(view)}
             onSelectDocument={handleSelectDocument}
@@ -300,7 +296,7 @@ export default function App() {
             documents={documents}
             categories={categories}
             globalSearch={globalSearch}
-            onAddCategory={handleAddCategory}
+            onAddCategory={(cat) => setCategories([...categories, cat])}
             onNavigate={(view) => setCurrentView(view)}
             onSelectDocument={handleSelectDocument}
             onUpdateDocument={handleUpdateDocument}
@@ -312,6 +308,7 @@ export default function App() {
           <UploadDocumentView
             categories={categories}
             wallet={wallet}
+            user={user}
             onAddDocument={handleAddDocument}
             onNavigate={(view) => setCurrentView(view)}
           />
@@ -331,6 +328,7 @@ export default function App() {
             document={selectedDocument}
             documents={documents}
             wallet={wallet}
+            user={user}
             onSelectDocument={handleSelectDocument}
             onUpdateDocument={handleUpdateDocument}
             onAddTimelineEvent={handleAddTimelineEvent}
@@ -343,9 +341,19 @@ export default function App() {
             documentsCount={documents.length}
             auditLogs={auditLogs}
             nodes={nodes}
-            onToggleNodeStatus={handleToggleNodeStatus}
+            onToggleNodeStatus={(nodeId) => {
+              setNodes(prev => prev.map(n => n.id === nodeId ? { ...n, status: n.status === 'Healthy' ? 'Degraded' : 'Healthy' } : n));
+            }}
             onAddLog={(log) => setAuditLogs([log, ...auditLogs])}
             onClearLogs={() => setAuditLogs([])}
+          />
+        );
+      case 'login':
+        return (
+          <LoginView
+            onLoginSuccess={handleLoginSuccess}
+            onNavigate={(view) => setCurrentView(view)}
+            onConnectWalletClick={() => setIsWalletModalOpen(true)}
           />
         );
       default:
@@ -355,11 +363,13 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex">
-      {/* Dynamic Sidebar Navigation */}
+      {/* Sidebar Navigation */}
       <Sidebar
         currentView={currentView}
         setCurrentView={setCurrentView}
         documentsCount={documents.length}
+        user={user}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Workspace Area */}
@@ -367,18 +377,20 @@ export default function App() {
         <Header
           currentView={currentView}
           wallet={wallet}
+          user={user}
           globalSearch={globalSearch}
           setGlobalSearch={setGlobalSearch}
           notifications={notifications}
           setNotifications={setNotifications}
           onConnectWalletClick={() => setIsWalletModalOpen(true)}
+          onNavigate={(view) => setCurrentView(view)}
         />
         <main className="pt-20 flex-1">
           {renderView()}
         </main>
       </div>
 
-      {/* Dynamic Connect Wallet Modal */}
+      {/* Connect Wallet Modal */}
       <ConnectWalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}

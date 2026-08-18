@@ -7,10 +7,12 @@ import {
   FileText, 
   BarChart3, 
   Sparkles,
-  Shield
+  Shield,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
-export default function Sidebar({ currentView, setCurrentView, documentsCount }) {
+export default function Sidebar({ currentView, setCurrentView, documentsCount, user, onSignOut }) {
   const navItems = [
     { id: 'landing', label: 'Overview', icon: Sparkles },
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -19,6 +21,7 @@ export default function Sidebar({ currentView, setCurrentView, documentsCount })
     { id: 'verify', label: 'Verify Integrity', icon: ShieldCheck },
     { id: 'document-detail', label: 'Document Detail', icon: FileText },
     { id: 'admin-analytics', label: 'Admin Analytics', icon: BarChart3 },
+    { id: 'login', label: user ? 'Account Details' : 'Sign In / Register', icon: LogIn },
   ];
 
   return (
@@ -68,6 +71,32 @@ export default function Sidebar({ currentView, setCurrentView, documentsCount })
           );
         })}
       </nav>
+
+      {/* User Info & Sign Out Footer */}
+      {user && (
+        <div className="p-3 mx-4 mb-2 bg-indigo-50/70 border border-indigo-100 rounded-2xl flex items-center justify-between">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            {user.avatar ? (
+              <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover ring-2 ring-indigo-200" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                {user.name ? user.name[0] : 'U'}
+              </div>
+            )}
+            <div className="truncate">
+              <div className="text-xs font-bold text-slate-900 truncate">{user.name}</div>
+              <div className="text-[10px] text-slate-500 truncate">{user.email}</div>
+            </div>
+          </div>
+          <button
+            onClick={onSignOut}
+            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Dynamic Network Footer Status Badge */}
       <div className="p-4 border-t border-slate-100 bg-slate-50/60">
