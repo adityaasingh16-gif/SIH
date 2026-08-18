@@ -1,0 +1,390 @@
+import React, { useState } from 'react';
+import Sidebar from './components/Sidebar';
+import Header from './components/Header';
+import ConnectWalletModal from './components/ConnectWalletModal';
+
+import LandingView from './views/LandingView';
+import DashboardView from './views/DashboardView';
+import MyVaultView from './views/MyVaultView';
+import UploadDocumentView from './views/UploadDocumentView';
+import VerifyDocumentView from './views/VerifyDocumentView';
+import DocumentDetailView from './views/DocumentDetailView';
+import AdminAnalyticsView from './views/AdminAnalyticsView';
+
+export default function App() {
+  const [currentView, setCurrentView] = useState('landing');
+  const [globalSearch, setGlobalSearch] = useState('');
+
+  // Dynamic Wallet State
+  const [wallet, setWallet] = useState({
+    address: '0x71C7656EC7ab88b098defB751B7401B5f6d839A2',
+    network: 'Polygon POS Mainnet',
+    chainId: 137,
+    balance: '14.85 MATIC',
+    isConnected: true
+  });
+  const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+
+  // Dynamic Categories
+  const [categories, setCategories] = useState([
+    'Commercial Contracts',
+    'Deeds & Land',
+    'Identity & IP',
+    'Regulatory Compliance'
+  ]);
+
+  // Dynamic Selected Document
+  const [selectedDocId, setSelectedDocId] = useState('DOC-1001');
+
+  // Dynamic Notifications State
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: 'Document Verified', desc: 'Deed #4829 confirmation received', time: '5m ago', read: false },
+    { id: 2, title: 'Multi-Sig Approval', desc: 'MSA Agreement signed by counsel', time: '1h ago', read: false },
+    { id: 3, title: 'IPFS Sync Complete', desc: 'Pinata node cluster synced', time: '3h ago', read: true }
+  ]);
+
+  // Master Dynamic Documents Collection
+  const [documents, setDocuments] = useState([
+    {
+      id: 'DOC-1001',
+      title: 'Commercial Land Registry Deed #4829',
+      category: 'Deeds & Land',
+      hash: '0xe8a92b109f83a4182b8c9d412093847291a0c7e5',
+      cid: 'QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco',
+      blockNumber: '19,842,019',
+      status: 'Verified',
+      jurisdiction: 'High Court of London',
+      confidentiality: 'Secret / Restricted',
+      timestamp: '14 Aug 2026, 11:24:08 UTC',
+      fileSize: '4.2 MB',
+      fileType: 'application/pdf',
+      signer: '0x71C7656EC7ab88b098defB751B7401B5f6d839A2',
+      timeline: [
+        { id: 1, title: 'Document Created & Local SHA-256 Hashed', actor: 'Legal Counsel (Client)', time: '14 Aug 2026, 10:15:00 UTC', color: 'bg-emerald-500' },
+        { id: 2, title: 'AES-256 Encryption & IPFS Pinning', actor: 'Pinata Cluster node-04', time: '14 Aug 2026, 10:18:22 UTC', color: 'bg-emerald-500' },
+        { id: 3, title: 'Smart Contract Anchor Call (Polygon POS)', actor: '0x71C7...39A2', time: '14 Aug 2026, 11:24:08 UTC', color: 'bg-indigo-600' },
+        { id: 4, title: 'Multi-Sig Verification Approval', actor: 'Court Registrar Registry', time: '14 Aug 2026, 14:02:11 UTC', color: 'bg-amber-500' }
+      ]
+    },
+    {
+      id: 'DOC-1002',
+      title: 'Global Master Services Agreement (MSA)',
+      category: 'Commercial Contracts',
+      hash: '0x9f83a4182b8c9d412093847291a0c7e5e8a92b10',
+      cid: 'QmY8ZkL82NnFwK3p9LmMx4v1q8Z7RtP6Bs2YqW4vE8Nn',
+      blockNumber: '19,840,112',
+      status: 'Verified',
+      jurisdiction: 'Supreme Court of New York',
+      confidentiality: 'Confidential',
+      timestamp: '12 Aug 2026, 09:14:20 UTC',
+      fileSize: '1.8 MB',
+      fileType: 'application/pdf',
+      signer: '0x71C7656EC7ab88b098defB751B7401B5f6d839A2',
+      timeline: [
+        { id: 1, title: 'Agreement Drafted & Hashed', actor: 'Corporate Legal Team', time: '12 Aug 2026, 08:30:00 UTC', color: 'bg-emerald-500' },
+        { id: 2, title: 'On-Chain Smart Contract Registration', actor: '0x71C7...39A2', time: '12 Aug 2026, 09:14:20 UTC', color: 'bg-indigo-600' }
+      ]
+    },
+    {
+      id: 'DOC-1003',
+      title: 'Intellectual Property Assignment Deed',
+      category: 'Identity & IP',
+      hash: '0x4182b8c9d412093847291a0c7e5e8a92b109f83a',
+      cid: 'QmA7Xp9W3nL5vR8q2YtB6Bs4vC9N1mZ8P3vE7R2N4mL',
+      blockNumber: '19,835,901',
+      status: 'Verified',
+      jurisdiction: 'Federal Court of Australia',
+      confidentiality: 'Secret / Restricted',
+      timestamp: '10 Aug 2026, 16:45:10 UTC',
+      fileSize: '3.1 MB',
+      fileType: 'application/pdf',
+      signer: '0x82A1656EC7ab88b098defB751B7401B5f6d839D1',
+      timeline: [
+        { id: 1, title: 'IP Patent Hash Generated', actor: 'IP Attorney', time: '10 Aug 2026, 15:00:00 UTC', color: 'bg-emerald-500' },
+        { id: 2, title: 'Anchored to Blockchain Ledger', actor: '0x82A1...94D1', time: '10 Aug 2026, 16:45:10 UTC', color: 'bg-indigo-600' }
+      ]
+    },
+    {
+      id: 'DOC-1004',
+      title: 'Corporate Articles of Incorporation',
+      category: 'Regulatory Compliance',
+      hash: '0x847291a0c7e5e8a92b109f83a4182b8c9d412093',
+      cid: 'QmZ9V1nL3mR7vC5p2Yb8Bs6vE4N9mP1vR3E8N2mL4mX',
+      blockNumber: '19,820,445',
+      status: 'Verified',
+      jurisdiction: 'Delaware Chancery Court',
+      confidentiality: 'Public / Unrestricted',
+      timestamp: '08 Aug 2026, 14:10:05 UTC',
+      fileSize: '6.5 MB',
+      fileType: 'application/pdf',
+      signer: '0x71C7656EC7ab88b098defB751B7401B5f6d839A2',
+      timeline: [
+        { id: 1, title: 'Filing Verified & Hashed', actor: 'State Registry Officer', time: '08 Aug 2026, 14:10:05 UTC', color: 'bg-emerald-500' }
+      ]
+    },
+    {
+      id: 'DOC-1005',
+      title: 'Confidentiality & Non-Disclosure Agreement',
+      category: 'Commercial Contracts',
+      hash: '0xc7e5e8a92b109f83a4182b8c9d412093847291a0',
+      cid: 'QmR4X7nL2mV5vC9p8Yb3Bs1vE6N4mP7vR9E2N1mL5mY',
+      blockNumber: '19,812,090',
+      status: 'Verified',
+      jurisdiction: 'High Court of Singapore',
+      confidentiality: 'Confidential',
+      timestamp: '05 Aug 2026, 18:22:00 UTC',
+      fileSize: '0.9 MB',
+      fileType: 'application/pdf',
+      signer: '0x71C7656EC7ab88b098defB751B7401B5f6d839A2',
+      timeline: [
+        { id: 1, title: 'NDA Signed & Registered', actor: 'Executive Officer', time: '05 Aug 2026, 18:22:00 UTC', color: 'bg-emerald-500' }
+      ]
+    }
+  ]);
+
+  // Master Dynamic System Audit Logs
+  const [auditLogs, setAuditLogs] = useState([
+    { id: 'LOG-9402', event: 'Smart Contract Ownership Re-anchored', user: 'Admin (0x71C7...39A2)', time: '10 mins ago', severity: 'Info' },
+    { id: 'LOG-9401', event: 'IPFS Cluster Garbage Collection', user: 'System Worker', time: '42 mins ago', severity: 'Low' },
+    { id: 'LOG-9400', event: 'Vault Document Uploaded (Deed #4829)', user: 'Counsel User', time: '1 hour ago', severity: 'Info' },
+    { id: 'LOG-9399', event: 'Multi-Sig Consensus Validation Passed', user: 'Validator Node 02', time: '3 hours ago', severity: 'Info' },
+  ]);
+
+  // Master Dynamic Infrastructure Nodes
+  const [nodes, setNodes] = useState([
+    { id: 'n1', name: 'Polygon POS Mainnet Gateway #1', region: 'us-east (N. Virginia)', status: 'Healthy', latency: 42, uptime: '99.99%' },
+    { id: 'n2', name: 'IPFS Pinning Cluster Alpha', region: 'eu-west (Frankfurt)', status: 'Healthy', latency: 88, uptime: '99.95%' },
+    { id: 'n3', name: 'Arweave Permanent Storage Bridge', region: 'ap-southeast (Singapore)', status: 'Healthy', latency: 112, uptime: '100%' },
+    { id: 'n4', name: 'Multi-Sig Key Manager Service', region: 'us-west (Oregon)', status: 'Healthy', latency: 38, uptime: '99.98%' },
+  ]);
+
+  // Dynamic Actions (CRUD Operations)
+
+  // 1. Add Document
+  const handleAddDocument = (newDoc) => {
+    const docId = `DOC-${1000 + documents.length + 1}`;
+    const fullDoc = {
+      id: docId,
+      ...newDoc,
+      signer: wallet.address
+    };
+
+    setDocuments(prev => [fullDoc, ...prev]);
+    setSelectedDocId(docId);
+
+    // Dynamic Notification & Log
+    setNotifications(prev => [
+      { id: Date.now(), title: 'New Document Vaulted', desc: `${newDoc.title} registered on-chain`, time: 'Just now', read: false },
+      ...prev
+    ]);
+
+    setAuditLogs(prev => [
+      {
+        id: `LOG-${9403 + prev.length}`,
+        event: `New Vault Document Registered (${newDoc.title})`,
+        user: `Signer (${wallet.address.substring(0, 6)}...${wallet.address.substring(wallet.address.length - 4)})`,
+        time: 'Just now',
+        severity: 'Info'
+      },
+      ...prev
+    ]);
+  };
+
+  // 2. Update Document Metadata or Status
+  const handleUpdateDocument = (id, updatedFields) => {
+    setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, ...updatedFields } : doc));
+    setAuditLogs(prev => [
+      {
+        id: `LOG-${9403 + prev.length}`,
+        event: `Document Updated (${id})`,
+        user: `Admin (${wallet.address.substring(0, 6)}...)`,
+        time: 'Just now',
+        severity: 'Info'
+      },
+      ...prev
+    ]);
+  };
+
+  // 3. Delete Document
+  const handleDeleteDocument = (id) => {
+    const targetDoc = documents.find(d => d.id === id);
+    setDocuments(prev => prev.filter(doc => doc.id !== id));
+    if (selectedDocId === id && documents.length > 1) {
+      const remaining = documents.filter(doc => doc.id !== id);
+      setSelectedDocId(remaining[0].id);
+    }
+    setAuditLogs(prev => [
+      {
+        id: `LOG-${9403 + prev.length}`,
+        event: `Document Removed from Vault (${targetDoc?.title || id})`,
+        user: `Admin (${wallet.address.substring(0, 6)}...)`,
+        time: 'Just now',
+        severity: 'Warning'
+      },
+      ...prev
+    ]);
+  };
+
+  // 4. Add Timeline Event to Document
+  const handleAddTimelineEvent = (docId, eventTitle, actorName) => {
+    const nowStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) + ' UTC';
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === docId) {
+        const newEvt = {
+          id: Date.now(),
+          title: eventTitle,
+          actor: actorName || wallet.address,
+          time: nowStr,
+          color: 'bg-indigo-600'
+        };
+        return {
+          ...doc,
+          timeline: [...(doc.timeline || []), newEvt]
+        };
+      }
+      return doc;
+    }));
+  };
+
+  // 5. Category Management
+  const handleAddCategory = (newCat) => {
+    if (newCat && !categories.includes(newCat)) {
+      setCategories([...categories, newCat]);
+    }
+  };
+
+  // 6. Select Document Helper
+  const handleSelectDocument = (id) => {
+    setSelectedDocId(id);
+    setCurrentView('document-detail');
+  };
+
+  // 7. Toggle Node Status / Ping Nodes
+  const handleToggleNodeStatus = (nodeId) => {
+    setNodes(prev => prev.map(n => {
+      if (n.id === nodeId) {
+        const nextStatus = n.status === 'Healthy' ? 'Degraded' : n.status === 'Degraded' ? 'Offline' : 'Healthy';
+        return { ...n, status: nextStatus, latency: nextStatus === 'Healthy' ? Math.floor(Math.random()*40 + 30) : nextStatus === 'Degraded' ? Math.floor(Math.random()*200 + 200) : 0 };
+      }
+      return n;
+    }));
+  };
+
+  const selectedDocument = documents.find(d => d.id === selectedDocId) || documents[0];
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'landing':
+        return (
+          <LandingView
+            documentsCount={documents.length}
+            wallet={wallet}
+            onConnectWalletClick={() => setIsWalletModalOpen(true)}
+            onExploreClick={() => setCurrentView('dashboard')}
+          />
+        );
+      case 'dashboard':
+        return (
+          <DashboardView
+            documents={documents}
+            wallet={wallet}
+            nodes={nodes}
+            onNavigate={(view) => setCurrentView(view)}
+            onSelectDocument={handleSelectDocument}
+            onDeleteDocument={handleDeleteDocument}
+          />
+        );
+      case 'my-vault':
+        return (
+          <MyVaultView
+            documents={documents}
+            categories={categories}
+            globalSearch={globalSearch}
+            onAddCategory={handleAddCategory}
+            onNavigate={(view) => setCurrentView(view)}
+            onSelectDocument={handleSelectDocument}
+            onUpdateDocument={handleUpdateDocument}
+            onDeleteDocument={handleDeleteDocument}
+          />
+        );
+      case 'upload-document':
+        return (
+          <UploadDocumentView
+            categories={categories}
+            wallet={wallet}
+            onAddDocument={handleAddDocument}
+            onNavigate={(view) => setCurrentView(view)}
+          />
+        );
+      case 'verify':
+        return (
+          <VerifyDocumentView
+            documents={documents}
+            onAddDocument={handleAddDocument}
+            onSelectDocument={handleSelectDocument}
+            onNavigate={(view) => setCurrentView(view)}
+          />
+        );
+      case 'document-detail':
+        return (
+          <DocumentDetailView
+            document={selectedDocument}
+            documents={documents}
+            wallet={wallet}
+            onSelectDocument={handleSelectDocument}
+            onUpdateDocument={handleUpdateDocument}
+            onAddTimelineEvent={handleAddTimelineEvent}
+            onDeleteDocument={handleDeleteDocument}
+          />
+        );
+      case 'admin-analytics':
+        return (
+          <AdminAnalyticsView
+            documentsCount={documents.length}
+            auditLogs={auditLogs}
+            nodes={nodes}
+            onToggleNodeStatus={handleToggleNodeStatus}
+            onAddLog={(log) => setAuditLogs([log, ...auditLogs])}
+            onClearLogs={() => setAuditLogs([])}
+          />
+        );
+      default:
+        return <LandingView documentsCount={documents.length} wallet={wallet} onConnectWalletClick={() => setIsWalletModalOpen(true)} onExploreClick={() => setCurrentView('dashboard')} />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 flex">
+      {/* Dynamic Sidebar Navigation */}
+      <Sidebar
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        documentsCount={documents.length}
+      />
+
+      {/* Main Workspace Area */}
+      <div className="pl-72 flex-1 flex flex-col">
+        <Header
+          currentView={currentView}
+          wallet={wallet}
+          globalSearch={globalSearch}
+          setGlobalSearch={setGlobalSearch}
+          notifications={notifications}
+          setNotifications={setNotifications}
+          onConnectWalletClick={() => setIsWalletModalOpen(true)}
+        />
+        <main className="pt-20 flex-1">
+          {renderView()}
+        </main>
+      </div>
+
+      {/* Dynamic Connect Wallet Modal */}
+      <ConnectWalletModal
+        isOpen={isWalletModalOpen}
+        onClose={() => setIsWalletModalOpen(false)}
+        wallet={wallet}
+        onSelectWallet={(newAddr, newNet) => setWallet({ ...wallet, address: newAddr, network: newNet || wallet.network, isConnected: true })}
+      />
+    </div>
+  );
+}
